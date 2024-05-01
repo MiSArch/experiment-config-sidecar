@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Dapr;
 using ExperimentConfigSidecar.Models;
 using ExperimentConfigSidecar.Services;
@@ -59,7 +60,7 @@ app.MapGet("/_ecs/defined-variables", async () => {
     {
         var responseMessage = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"{appUrl}/ecs/defined-variables"));
         config = await responseMessage.Content.ReadFromJsonAsync<Dictionary<string, VariableDefinition>>();
-        logger.LogInformation($"Received config properties: {config}");
+        logger.LogInformation("Received config properties: {Config}", config);
     }
     catch (Exception e)
     {
@@ -73,21 +74,8 @@ app.MapGet("/_ecs/defined-variables", async () => {
 app.MapPost("/_ecs/pubsub/{**path}", async context => {
     var path = context.Request.RouteValues["path"];
     var requestUrl = $"{appUrl}/{path}";
-    var requestMessage = new HttpRequestMessage(HttpMethod.Post, requestUrl)
-    {
-        Content = new StreamContent(context.Request.Body)
-    };
     var deterioration = configService.GetPubsubDeterioration();
-    if (deterioration.Delay.HasValue) {
-        await Task.Delay(deterioration.Delay.Value);
-    }
-    if (deterioration.Error) {
-        context.Response.StatusCode = 500;
-        return;
-    }
-    var responseMessage = await httpClient.SendAsync(requestMessage);
-    context.Response.StatusCode = (int)responseMessage.StatusCode;
-    await context.Response.WriteAsync(await responseMessage.Content.ReadAsStringAsync());
+    await Util.ProxyRequest(requestUrl, HttpMethod.Post, context, deterioration, httpClient);
 });
 
 app.MapFallback(async context =>
@@ -95,27 +83,13 @@ app.MapFallback(async context =>
     var path = context.Request.Path;
     var method = context.Request.Method;
     var requestUrl = $"{appUrl}/{path}";
-    var requestMessage = new HttpRequestMessage(new HttpMethod(method), requestUrl)
-    {
-        Content = new StreamContent(context.Request.Body)
-    };
     var deterioration = configService.GetServiceInvocationDeterioration(path);
-    if (deterioration.Delay.HasValue) {
-        await Task.Delay(deterioration.Delay.Value);
-    }
-    if (deterioration.ErrorCode.HasValue) {
-        context.Response.StatusCode = deterioration.ErrorCode.Value;
-        return;
-    }
-
-    var responseMessage = await httpClient.SendAsync(requestMessage);
-    context.Response.StatusCode = (int)responseMessage.StatusCode;
-    await context.Response.WriteAsync(await responseMessage.Content.ReadAsStringAsync());
+    await Util.ProxyRequest(requestUrl, new HttpMethod(method), context, deterioration, httpClient);
 });
 
-logger.LogInformation($"Waiting for application on port {appPort}");
+logger.LogInformation("Waiting for application on port {AppPort}", appPort);
 new StartupService().WaitForStartup(appPort).Wait();
-logger.LogInformation($"Application is running on port {appPort}");
+logger.LogInformation("Application is running on port {AppPort}", appPort);
 
 new HeartbeatService(heartbeatInterval, pubsubName, replicaId, serviceName, logger).StartAsync();
 

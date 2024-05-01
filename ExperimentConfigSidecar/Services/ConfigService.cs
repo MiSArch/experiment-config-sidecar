@@ -304,12 +304,12 @@ public class ConfigService
     /// Decides based on the current configuration weather to delay the call and/or return an error.
     /// </summary>
     /// <returns>The deterioration for a pubsub call</returns>
-    public PubsubDetertioration GetPubsubDeterioration()
+    public Deterioration GetPubsubDeterioration()
     {
-        return new PubsubDetertioration
+        return new Deterioration
         (
             random.NextDouble() < pubsubDetertiorationRule.DelayProbability ? pubsubDetertiorationRule.Delay : null,
-            random.NextDouble() < pubsubDetertiorationRule.ErrorProbability
+            random.NextDouble() < pubsubDetertiorationRule.ErrorProbability ? 500 : null
         );
 
     }
@@ -320,20 +320,20 @@ public class ConfigService
     /// </summary>
     /// <param name="path">Request path, used to find applicable rule</param>
     /// <returns>The deterioration for a service invocation call</returns>
-    public ServiceInvocationDeterioration GetServiceInvocationDeterioration(string path)
+    public Deterioration GetServiceInvocationDeterioration(string path)
     {
         foreach (var rule in serviceInvocationDeteriorationRules)
         {
             if (rule.Path == null || path.StartsWith(rule.Path))
             {
-                return new ServiceInvocationDeterioration
+                return new Deterioration
                 (
                     random.NextDouble() < rule.DelayProbability ? rule.Delay : null,
                     random.NextDouble() < rule.ErrorProbability ? rule.ErrorCode : null
                 );
             }
         }
-        return new ServiceInvocationDeterioration(null, null);
+        return new Deterioration(null, null);
     }
 
     /// <summary>
