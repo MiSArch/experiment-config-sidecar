@@ -68,7 +68,7 @@ app.MapGet("/_ecs/defined-variables", async () => {
         logger.LogError(e, "Failed to get defined variables from service");
     }
     configService.AddVariableDefinitions(config);
-    return config;
+    return new VariableDefinitions(config);
 });
 
 app.MapPost("/_ecs/pubsub/{**path}", async context => {
