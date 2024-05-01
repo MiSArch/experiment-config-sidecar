@@ -8,10 +8,10 @@ namespace ExperimentConfigSidecar.Services;
 /// </summary>
 /// <param name="heartbeatInterval">The interval in milliseconds between heartbeats</param>
 /// <param name="pubsubName">The name of the pubsub component</param>
-/// <param name="instanceId">The unique identifier of the instance</param>
+/// <param name="replicaId">The unique identifier of the replica</param>
 /// <param name="serviceName">The name of the service</param>
 /// <param name="logger">The logger</param>
-public class HeartbeatService(int heartbeatInterval, string pubsubName, Guid instanceId, string serviceName, ILogger logger)
+public class HeartbeatService(int heartbeatInterval, string pubsubName, Guid replicaId, string serviceName, ILogger logger)
 {
 
     /// <summary>
@@ -30,7 +30,7 @@ public class HeartbeatService(int heartbeatInterval, string pubsubName, Guid ins
             try
             {
                 await Task.Delay(heartbeatInterval);
-                await daprClient.PublishEventAsync(pubsubName, "heartbeat", new HeartbeatEvent(instanceId, serviceName));
+                await daprClient.PublishEventAsync(pubsubName, "heartbeat", new HeartbeatEvent(replicaId, serviceName));
             }
             catch (Exception e)
             {
