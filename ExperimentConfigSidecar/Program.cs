@@ -82,7 +82,7 @@ app.MapFallback(async context =>
 {
     var path = context.Request.Path;
     var method = context.Request.Method;
-    var requestUrl = $"{appUrl}/{path}";
+    var requestUrl = $"{appUrl}{path}";
     var deterioration = configService.GetServiceInvocationDeterioration(path);
     await Util.ProxyRequest(requestUrl, new HttpMethod(method), context, deterioration, httpClient);
 });
