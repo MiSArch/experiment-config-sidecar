@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace ExperimentConfigSidecar.Models;
 
 /// <summary>
@@ -8,12 +6,8 @@ namespace ExperimentConfigSidecar.Models;
 public class ConfigurationEvent
 {
     /// <summary>
-    /// The ID of the replica that triggered the event.
+    /// The configurations that have changed.
     /// </summary>
-    public string ReplicaId { get; set; }
+    public List<ReplicaConfiguration> Configurations { get; set; }
 
-    /// <summary>
-    /// The new configurations.
-    /// </summary>
-    public Dictionary<string, JsonElement> Configurations { get; set; }
 }

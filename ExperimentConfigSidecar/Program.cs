@@ -40,11 +40,11 @@ app.MapGet("/dapr/subscribe", async () =>
 
 app.MapPost("/_ecs/variables-event", async context =>
 {
-    var cloudEvent = await context.Request.ReadFromJsonAsync<CloudEvent<List<ConfigurationEvent>>>();
-    var config = cloudEvent.Data.Where(config => Guid.Parse(config.ReplicaId) == replicaId).FirstOrDefault();
+    var cloudEvent = await context.Request.ReadFromJsonAsync<CloudEvent<ConfigurationEvent>>();
+    var config = cloudEvent.Data.Configurations.Where(config => Guid.Parse(config.ReplicaId) == replicaId).FirstOrDefault();
     if (config != null)
     {
-        var remainingConfig = configService.UpdateConfig(config.Configurations);
+        var remainingConfig = configService.UpdateConfig(config.Variables);
         if (remainingConfig.Count > 0)
         {
             var responseMessage = await httpClient.PostAsJsonAsync($"{appUrl}/ecs/variables", remainingConfig);
