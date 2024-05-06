@@ -115,7 +115,7 @@ public class ConfigService
                     "usageDuration": {"type": "integer"},
                     "pauseDuration": {"type": "integer"}
                 },
-                "required": ["usageduration", "pauseduration"],
+                "required": ["usageDuration", "pauseDuration"],
                 "additionalProperties": false
             }
         },
