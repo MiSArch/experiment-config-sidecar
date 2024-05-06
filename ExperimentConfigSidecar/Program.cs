@@ -23,8 +23,18 @@ const string pubsubName = "experiment-config-pubsub";
 app.MapGet("/dapr/subscribe", async () =>
 {
     logger.LogInformation("Received subscription request");
-    var responseMessage = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"{appUrl}/dapr/subscribe"));
-    var subscriptionSpecs = await responseMessage.Content.ReadFromJsonAsync<List<SubscriptionSpec>>();
+    List<SubscriptionSpec> subscriptionSpecs;
+    try
+    {
+        var responseMessage = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"{appUrl}/dapr/subscribe"));
+        subscriptionSpecs = await responseMessage.Content.ReadFromJsonAsync<List<SubscriptionSpec>>();
+    }
+    catch (Exception e)
+    {
+        subscriptionSpecs = [];
+        logger.LogInformation("Failed to get subscriptions from service");
+        logger.LogDebug(e, "Cause");
+    }
     foreach (var spec in subscriptionSpecs)
     {
         spec.Route = spec.Route.StartsWith('/') ? $"/_ecs/pubsub{spec.Route}" : $"/_esc/pubsub/{spec.Route}";
@@ -65,7 +75,8 @@ app.MapGet("/_ecs/defined-variables", async () => {
     catch (Exception e)
     {
         config = [];
-        logger.LogError(e, "Failed to get defined variables from service");
+        logger.LogInformation("Failed to get defined variables from service");
+        logger.LogDebug(e, "Cause");
     }
     configService.AddVariableDefinitions(config);
     return new VariableDefinitions(config);
