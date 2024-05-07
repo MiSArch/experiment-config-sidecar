@@ -11,133 +11,6 @@ public class ConfigService
 {
 
     /// <summary>
-    /// Key for the pubsub deterioration configuration property.
-    /// </summary>
-    public const string PubsubDeteriorationKey = "pubsubDeterioration";
-
-    /// <summary>
-    /// Key for the service invocation deterioration configuration property.
-    /// </summary>
-    public const string ServiceInvocationDeteriorationKey = "serviceInvocationDeterioration";
-
-    /// <summary>
-    /// Key for the artificial memory usage configuration property.
-    /// </summary>
-    public const string MemoryUsageKey = "artificialMemoryUsage";
-
-    /// <summary>
-    /// Key for the artificial CPU usage configuration property.
-    /// </summary>
-    public const string CPUUsageKey = "artificialCPUUsage";
-
-    /// <summary>
-    /// JSON schema for the pubsub deterioration configuration property.
-    /// </summary>
-    private const string PubsubDeteriorationSchema = """
-    {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "oneOf": [
-            {
-                "type": "object",
-                "properties": {
-                    "delayProbability": {"type": "number"},
-                    "errorProbability": {"type": "number"},
-                    "delay": {"type": "integer"}
-                },
-                "additionalProperties": false
-            },
-            {
-                "type": "null"
-            }
-        ]
-    }
-    """;
-
-    /// <summary>
-    /// JSON schema for the service invocation deterioration configuration property.
-    /// </summary>
-    private const string ServiceInvocationDeteriorationSchema = """
-    {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "$defs": {
-            "item": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string"},
-                    "delayProbability": {"type": "number"},
-                    "delay": {"type": "integer"},
-                    "errorProbability": {"type": "number"},
-                    "errorCode": {"type": "integer"}
-                },
-                "additionalProperties": false
-            }
-        },
-        "oneOf": [
-            { "$ref": "#/$defs/item" },
-            {
-                "type": "array",
-                "items": { "$ref": "#/$defs/item" }
-            },
-            {
-                "type": "null"
-            }
-        ]
-    }
-    """;
-
-    /// <summary>
-    /// JSON schema for the artificial memory usage configuration property.
-    /// </summary>
-    private const string MemoryUsageSchema = """
-    {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "oneOf": [
-            {
-                "type": "integer"
-            },
-            {
-                "type": "null"
-            }
-        ]
-    }
-    """;
-
-    /// <summary>
-    /// JSON schema for the artificial CPU usage configuration property.
-    /// </summary>
-    private const string CPUUsageSchema = """
-    {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "$defs": {
-            "item": {
-                "type": "object",
-                "properties": {
-                    "usageDuration": {"type": "integer"},
-                    "pauseDuration": {"type": "integer"}
-                },
-                "required": ["usageDuration", "pauseDuration"],
-                "additionalProperties": false
-            }
-        },
-        "oneOf": [
-            { "$ref": "#/$defs/item" },
-            {
-                "type": "array",
-                "items": { "$ref": "#/$defs/item" }
-            },
-            {
-                "type": "null"
-            }
-        ]
-    }
-    """;
-
-    /// <summary>
-    /// Set of keys for configuration properties handled by the sidecar itself.
-    /// </summary>
-    private readonly HashSet<string> configPropertyKeys = new([PubsubDeteriorationKey, ServiceInvocationDeteriorationKey, MemoryUsageKey, CPUUsageKey]);
-
-    /// <summary>
     /// List of current service invocation deterioration rules.
     /// </summary>
     private List<ServiceInvocationDeteriorationRule> serviceInvocationDeteriorationRules = [];
@@ -184,7 +57,7 @@ public class ConfigService
         UpdateServiceInvocationDeterioration(config);
         UpdateArtificialMemoryUsage(config);
         UpdateArtificialCPUUsage(config);
-        return config.Where(pair => !configPropertyKeys.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
+        return config.Where(pair => !ConfigPropertyDefinitions.ConfigPropertyKeys.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
     }
 
     /// <summary>
@@ -193,7 +66,7 @@ public class ConfigService
     /// <param name="config">Contains all config properties</param>
     private void UpdateArtificialMemoryUsage(Dictionary<string, JsonElement> config)
     {
-        if (config.TryGetValue(MemoryUsageKey, out JsonElement value))
+        if (config.TryGetValue(ConfigPropertyDefinitions.MemoryUsageKey, out JsonElement value))
         {
             artificialMemoryUsage = value.TryGetInt64(out var leak) ? leak : 0;
         }
@@ -207,7 +80,7 @@ public class ConfigService
     private void UpdateArtificialCPUUsage(Dictionary<string, JsonElement> config)
     {
         artificialCPUUsage = [];
-        if (config.TryGetValue(CPUUsageKey, out JsonElement value) && !value.IsNull())
+        if (config.TryGetValue(ConfigPropertyDefinitions.CPUUsageKey, out JsonElement value) && !value.IsNull())
         {
             if (value.ValueKind == JsonValueKind.Object)
             {
@@ -231,7 +104,7 @@ public class ConfigService
     private void UpdateServiceInvocationDeterioration(Dictionary<string, JsonElement> config)
     {
         serviceInvocationDeteriorationRules = [];
-        if (config.TryGetValue(ServiceInvocationDeteriorationKey, out JsonElement value) && !value.IsNull())
+        if (config.TryGetValue(ConfigPropertyDefinitions.ServiceInvocationDeteriorationKey, out JsonElement value) && !value.IsNull())
         {
             if (value.ValueKind == JsonValueKind.Object)
             {
@@ -253,7 +126,7 @@ public class ConfigService
     /// <param name="config">Contains all config properties</param>
     private void UpdatePubsubDeterioration(Dictionary<string, JsonElement> config)
     {
-        if (config.TryGetValue(PubsubDeteriorationKey, out JsonElement value) && !value.IsNull())
+        if (config.TryGetValue(ConfigPropertyDefinitions.PubsubDeteriorationKey, out JsonElement value) && !value.IsNull())
         {
             pubsubDetertiorationRule = new
             (
@@ -343,10 +216,10 @@ public class ConfigService
     /// <param name="existingDefinitions">Existing variable definitions from the service</param>
     public void AddVariableDefinitions(Dictionary<string, VariableDefinition> existingDefinitions)
     {
-        existingDefinitions.Add(PubsubDeteriorationKey, new VariableDefinition(PubsubDeteriorationSchema.AsJsonElement(), "null".AsJsonElement()));
-        existingDefinitions.Add(ServiceInvocationDeteriorationKey, new VariableDefinition(ServiceInvocationDeteriorationSchema.AsJsonElement(), "null".AsJsonElement()));
-        existingDefinitions.Add(MemoryUsageKey, new VariableDefinition(MemoryUsageSchema.AsJsonElement(), "null".AsJsonElement()));
-        existingDefinitions.Add(CPUUsageKey, new VariableDefinition(CPUUsageSchema.AsJsonElement(), "null".AsJsonElement()));
+        existingDefinitions.Add(ConfigPropertyDefinitions.PubsubDeteriorationKey, new VariableDefinition(ConfigPropertyDefinitions.PubsubDeteriorationSchema.AsJsonElement(), "null".AsJsonElement()));
+        existingDefinitions.Add(ConfigPropertyDefinitions.ServiceInvocationDeteriorationKey, new VariableDefinition(ConfigPropertyDefinitions.ServiceInvocationDeteriorationSchema.AsJsonElement(), "null".AsJsonElement()));
+        existingDefinitions.Add(ConfigPropertyDefinitions.MemoryUsageKey, new VariableDefinition(ConfigPropertyDefinitions.MemoryUsageSchema.AsJsonElement(), "null".AsJsonElement()));
+        existingDefinitions.Add(ConfigPropertyDefinitions.CPUUsageKey, new VariableDefinition(ConfigPropertyDefinitions.CPUUsageSchema.AsJsonElement(), "null".AsJsonElement()));
     }
 }
 
