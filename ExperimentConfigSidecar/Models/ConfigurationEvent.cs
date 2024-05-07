@@ -1,7 +1,7 @@
 namespace ExperimentConfigSidecar.Models;
 
 /// <summary>
-/// Event to signal a configuration change.
+/// Event from the experiment config service to signal a configuration change.
 /// </summary>
 public class ConfigurationEvent
 {

@@ -42,7 +42,7 @@ public class SubscriptionSpec
 public class BulkSubscribe
 {
     /// <summary>
-    /// The bulk subscription configuration.
+    /// If true, do a bulk subscription, otherwise do a regular subscription.
     /// </summary>
     public bool Enabled { get; set; }
 
