@@ -1,0 +1,5 @@
+services:
+  experiment-config-sidecar:
+    build:
+      context: .
+      dockerfile: Dockerfile
