@@ -40,7 +40,7 @@ app.MapGet("/dapr/subscribe", async () =>
     }
     foreach (var spec in subscriptionSpecs)
     {
-        spec.Route = spec.Route.StartsWith('/') ? $"/_ecs/pubsub{spec.Route}" : $"/_esc/pubsub/{spec.Route}";
+        spec.Route = spec.Route.StartsWith('/') ? $"/_ecs/pubsub{spec.Route}" : $"/_ecs/pubsub/{spec.Route}";
     }
     subscriptionSpecs.Add(new SubscriptionSpec
     {
