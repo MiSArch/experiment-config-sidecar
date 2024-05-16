@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using ExperimentConfigSidecar.Services;
+using Yarp.ReverseProxy.Forwarder;
 
 namespace ExperimentConfigSidecar.Models;
 
@@ -82,13 +84,14 @@ public static class Util
     /// <summary>
     /// Helper to proxy a request to an URL.
     /// </summary>
-    /// <param name="requestUrl">The URL to proxy to</param>
-    /// <param name="method">The HTTP method</param>
+    /// <param name="appUrl">The URL to proxy to (prefix)</param>
+    /// <param name="path">The path to proxy to (suffix)</param>
     /// <param name="context">The HTTP context, used for content(-type)</param>
     /// <param name="deterioration">The deterioration to apply</param>
-    /// <param name="httpClient">The HTTP client to use</param>
+    /// <param name="httpClient">The HTTP message invoker to use</param>
+    /// <param name="forwarder">The HTTP forwarder to use</param>
     /// <returns>The task representing the operation</returns>
-    public static async Task ProxyRequest(string requestUrl, HttpMethod method, HttpContext context, Deterioration deterioration, HttpClient httpClient)
+    public static async Task ProxyRequest(string appUrl, string path, HttpContext context, Deterioration deterioration, HttpMessageInvoker httpClient, IHttpForwarder forwarder)
     {
         var content = new StreamContent(context.Request.Body);
         var contentType = context.Request.ContentType;
@@ -96,10 +99,6 @@ public static class Util
         {
             content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         }
-        var requestMessage = new HttpRequestMessage(method, requestUrl)
-        {
-            Content = content
-        };
         if (deterioration.Delay.HasValue) {
             await Task.Delay(deterioration.Delay.Value);
         }
@@ -107,9 +106,6 @@ public static class Util
             context.Response.StatusCode = deterioration.ErrorCode.Value;
             return;
         }
-        var responseMessage = await httpClient.SendAsync(requestMessage);
-        context.Response.StatusCode = (int)responseMessage.StatusCode;
-        context.Response.ContentType = responseMessage.Content.Headers.ContentType?.ToString();
-        await context.Response.WriteAsync(await responseMessage.Content.ReadAsStringAsync());
+        await forwarder.SendAsync(context, appUrl, httpClient, ForwarderRequestConfig.Empty, new PathTransformer(path));
     }
 }

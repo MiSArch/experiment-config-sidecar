@@ -2,13 +2,16 @@ using System.Net.Http.Headers;
 using Dapr;
 using ExperimentConfigSidecar.Models;
 using ExperimentConfigSidecar.Services;
+using Yarp.ReverseProxy.Forwarder;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Services.AddHttpForwarder();
 
 var app = builder.Build();
 var httpClient = new HttpClient();
+var httpMessageInvoker = new HttpMessageInvoker(new SocketsHttpHandler());
 var logger = app.Logger;
 var configService = new ConfigService();
 
@@ -37,7 +40,7 @@ app.MapGet("/dapr/subscribe", async () =>
     }
     foreach (var spec in subscriptionSpecs)
     {
-        spec.Route = spec.Route.StartsWith('/') ? $"/_ecs/pubsub{spec.Route}" : $"/_esc/pubsub/{spec.Route}";
+        spec.Route = spec.Route.StartsWith('/') ? $"/_ecs/pubsub{spec.Route}" : $"/_ecs/pubsub/{spec.Route}";
     }
     subscriptionSpecs.Add(new SubscriptionSpec
     {
@@ -82,20 +85,16 @@ app.MapGet("/_ecs/defined-variables", async () => {
     return new VariableDefinitions(config);
 });
 
-app.MapPost("/_ecs/pubsub/{**path}", async context => {
-    var path = context.Request.RouteValues["path"];
-    var requestUrl = $"{appUrl}/{path}";
+app.Map("/_ecs/pubsub/{**path}", async (HttpContext context, IHttpForwarder forwarder) => {
+    var path = context.Request.RouteValues["path"] as string;
     var deterioration = configService.GetPubsubDeterioration();
-    await Util.ProxyRequest(requestUrl, HttpMethod.Post, context, deterioration, httpClient);
+    await Util.ProxyRequest(appUrl, $"/{path}", context, deterioration, httpMessageInvoker, forwarder);
 });
 
-app.MapFallback(async context =>
-{
+app.MapFallback(async (HttpContext context, IHttpForwarder forwarder) => {
     var path = context.Request.Path;
-    var method = context.Request.Method;
-    var requestUrl = $"{appUrl}{path}";
     var deterioration = configService.GetServiceInvocationDeterioration(path);
-    await Util.ProxyRequest(requestUrl, new HttpMethod(method), context, deterioration, httpClient);
+    await Util.ProxyRequest(appUrl, path, context, deterioration, httpMessageInvoker, forwarder);
 });
 
 logger.LogInformation("Waiting for application on port {AppPort}", appPort);
