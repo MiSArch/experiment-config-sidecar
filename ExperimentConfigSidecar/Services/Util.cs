@@ -89,6 +89,7 @@ public static class Util
     /// <param name="context">The HTTP context, used for content(-type)</param>
     /// <param name="deterioration">The deterioration to apply</param>
     /// <param name="httpClient">The HTTP message invoker to use</param>
+    /// <param name="forwarder">The HTTP forwarder to use</param>
     /// <returns>The task representing the operation</returns>
     public static async Task ProxyRequest(string appUrl, string path, HttpContext context, Deterioration deterioration, HttpMessageInvoker httpClient, IHttpForwarder forwarder)
     {
