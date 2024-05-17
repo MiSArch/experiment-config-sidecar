@@ -68,7 +68,7 @@ public class ConfigService
     {
         if (config.TryGetValue(ConfigPropertyDefinitions.MemoryUsageKey, out JsonElement value))
         {
-            artificialMemoryUsage = value.TryGetInt64(out var leak) ? leak : 0;
+            artificialMemoryUsage = (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var leak)) ? leak : 0;
         }
         memoryUsageService.UpdateMemoryUsage(artificialMemoryUsage);
     }
