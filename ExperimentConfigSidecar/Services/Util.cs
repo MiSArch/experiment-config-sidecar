@@ -93,12 +93,6 @@ public static class Util
     /// <returns>The task representing the operation</returns>
     public static async Task ProxyRequest(string appUrl, string path, HttpContext context, Deterioration deterioration, HttpMessageInvoker httpClient, IHttpForwarder forwarder)
     {
-        var content = new StreamContent(context.Request.Body);
-        var contentType = context.Request.ContentType;
-        if (contentType != null)
-        {
-            content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-        }
         if (deterioration.Delay.HasValue) {
             await Task.Delay(deterioration.Delay.Value);
         }
